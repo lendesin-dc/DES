@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Impresión Sewoo LK-P43</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #0056b3; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #218838; }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background: #eee;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Prueba de Impresión (2 QR)</h2>
+    
+    <div class="form-group">
+        <label for="serial">Número de Serie:</label>
+        <input type="text" id="serial" value="SN123456789">
+    </div>
+    
+    <div class="form-group">
+        <label for="attr1">Atributo 1:</label>
+        <input type="text" id="attr1" value="MOD-A">
+    </div>
+    
+    <div class="form-group">
+        <label for="attr2">Atributo 2:</label>
+        <input type="text" id="attr2" value="LOTE-2026">
+    </div>
+
+    <button onclick="conectarEImprimir()">Imprimir en Sewoo</button>
+
+    <div id="log">Logs del sistema...</div>
+</div>
+
+<script>
+    function log(txt) {
+        const logDiv = document.getElementById('log');
+        logDiv.innerText += "\n" + txt;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function conectarEImprimir() {
+        // 1. Obtener valores de la interfaz
+        const serial = document.getElementById('serial').value;
+        const attr1 = document.getElementById('attr1').value;
+        const attr2 = document.getElementById('attr2').value;
+        
+        const datosQR = `${attr1}-${attr2}-${serial}`;
+        log(`Datos a codificar: ${datosQR}`);
+
+        // 2. Construir comando CPCL para tus etiquetas de dos en fondo (Ancho total 800 puntos)
+        const comandoCPCL = 
+            "! 0 200 200 240 1\r\n" +
+            "PAGE-WIDTH 800\r\n" +
+            "BARCODE-TEXT OFF\r\n" +
+            // QR Izquierdo (Columna 1) -> X=40, Y=20, Tamaño U=5
+            "BARCODE QR 40 20 M 2 U 5\r\n" +
+            "MA," + datosQR + "\r\n" +
+            "ENDQR\r\n" +
+            // QR Derecho (Columna 2) -> X=440, Y=20, Tamaño U=5
+            "BARCODE QR 440 20 M 2 U 5\r\n" +
+            "MA," + datosQR + "\r\n" +
+            "ENDQR\r\n" +
+            "PRINT\r\n";
+
+        // Convertir texto a ArrayBuffer (Bytes)
+        const encoder = new TextEncoder();
+        const dataToWrite = encoder.encode(comandoCPCL);
+
+        try {
+            log("Buscando impresora Bluetooth...");
+            // Usamos un filtro amplio para aceptar cualquier dispositivo Bluetooth de perfil Serie (SPP)
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // UUID estándar SPP (Serial Port Profile)
+            });
+
+            log(`Dispositivo seleccionado: ${device.name || 'Dispositivo sin nombre'}`);
+            log("Conectando al servidor GATT...");
+            const server = await device.gatt.connect();
+            
+            log("Buscando el servicio de Puerto Serie...");
+            const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+            
+            log("Obteniendo características de escritura...");
+            const characteristics = await service.getCharacteristics();
+            
+            // Buscar la característica que permita escribir datos a la impresora
+            const writeCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+
+            if (writeCharacteristic) {
+                log("Enviando comandos a la Sewoo LK-P43...");
+                await writeCharacteristic.writeValue(dataToWrite);
+                log("¡Impresión enviada con éxito!");
+            } else {
+                log("Error: No se encontró un canal de escritura válido en este dispositivo.");
+            }
+
+            // Desconectar al terminar para liberar el canal Bluetooth
+            device.gatt.disconnect();
+            log("Desconectado de la impresora de forma segura.");
+
+        } catch (error) {
+            log(`ERROR: ${error.message}`);
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -75,7 +75,7 @@
             // Si el teléfono está en la mesa (Z ≈ 9.8) y le pegan, el valor se dispara o cae bruscamente.
             const fuerzaZpura = Math.abs(acc.z - 9.8); 
 
-            if (fuerzaZpura > 12) { 
+            if (fuerzaZpura > 6) { 
                 log(`¡GOLPE EN Z DETECTADO! Fuerza pura: ${fuerzaZpura.toFixed(2)}`);
                 // Aquí verificaríamos si X e Y se mantuvieron relativamente bajos 
                 // para asegurar que el teléfono NO se levantó ni se giró.
@@ -85,12 +85,12 @@
             }
 
             // Detectar si el teléfono está siendo levantado o inclinado bruscamente en Y
-            if (Math.abs(acc.y) > 8) {
+            if (Math.abs(acc.y) > 6) {
                 log(`⚠️ MOVIMIENTO EN Y: El teléfono se inclinó hacia adelante/atrás.`);
             }
             
             // Detectar si el teléfono se movió de lado
-            if (Math.abs(acc.x) > 8) {
+            if (Math.abs(acc.x) > 6) {
                 log(`⚠️ MOVIMIENTO EN X: El teléfono se desplazó lateralmente.`);
             }
         }

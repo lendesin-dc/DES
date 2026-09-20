@@ -1,735 +1,109 @@
 <!DOCTYPE html>
 <html lang="es">
-    <link rel="icon" type="image/png" href="data:image/png;base64,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">    
-
-    
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Bodega S</title>
+    <title>Calibrador de Acelerómetro Industrial</title>
     <style>
-        /* Ajustes de diseño adaptables (Mobile-First) */
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 5px; background-color: #f0f2f5; }
-        .contenedor { max-width: 900px; margin: 0 auto; background: white; padding: 5px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h2 { text-align: center; margin-top: 0; font-size: 1.2rem; color: #1a1a1a; }
-        
-        .franja-botones { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; background: #f8f9fa; padding: 5px; border-radius: 6px; }
-        .fila-botones { display: flex; flex-direction: column; gap: 7px; } 
-        
-        /* En pantallas grandes ponemos las etiquetas al lado, en celulares arriba */
-        @media(min-width: 600px) {
-            .fila-botones { flex-direction: row; align-items: center; gap: 5px; }
-            .fila-botones label { width: 150px; }
-        }
-        
-        .fila-botones label { font-weight: bold; font-size: 14px; color: #495057; }
-        .grupo { display: flex; gap: 8px; flex-wrap: wrap; }
-        
-        /* Botones optimizados para dedos grandes en pantallas táctiles */
-        button.btn-opcion { min-width: 65px; padding: 2px 10px; font-size: 20px; font-weight: 500; border: 1px solid #ced4da; border-radius: 6px; background: white; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        button.btn-opcion.activo { background: #0d6efd; color: white; border-color: #0d6efd; box-shadow: 0 2px 4px rgba(13,110,253,0.3); }
-        
-        .franja-lector { margin-bottom: 10px; background: #e7f1ff; padding: 7px; border-radius: 6px; border: 1px solid #b6d4fe; }
-        .franja-lector label { font-size: 26px; display: block; font-weight: bold; margin-bottom: 20px; color: #084298; }
-        .input-qr { width: 100%; padding: 8px; font-size: 18px; border: 2px solid #86b7fe; border-radius: 6px; box-sizing: border-box; }
-        
-        /* Contenedor responsivo para que la tabla no rompa el diseño en celular */
-        .tabla-contenedor { overflow-x: auto; border: 1px solid #dee2e6; border-radius: 6px; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 500px; }
-        th { background: #212529; color: white; padding: 7px; }
-        td { padding: 5px; border-bottom: 1px solid #dee2e6; }
-        
-        tr.registro-anulado { background-color: #f1f3f5 !important; color: #a0aec0; text-decoration: line-through; }
-        .btn-anular { background: #dc3545; color: white; border: none; padding: 6px 6px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .badge-anulado { color: #718096; font-weight: bold; text-decoration: none !important; }
-        
-        /* Panel inferior de utilidades */
-        .panel-inferior { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee; }
-        .btn-grabar { background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-        .btn-grabar:hover { background: #bc3545; }
-        .btn-limpiar { background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-        .btn-limpiar:hover { background: #dc3545; }
+        body { font-family: sans-serif; padding: 20px; background: #222; color: #fff; }
+        .eje { font-size: 34px; margin: 10px 0; font-family: monospace; }
+        .consola { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 14px; color: #0f0; }
+        button { padding: 15px; font-size: 15px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%; margin-bottom: 20px;}
     </style>
 </head>
 <body>
 
-<div class="contenedor">
-    <h2>Registro de Bodega S</h2>
-
-    <!-- FILAS DE BOTONES ADAPTABLES -->
-    <div class="franja-botones">
-        <div class="fila-botones">
-            <label>Origen :</label>
-            <div class="grupo">
-            <button class="btn-opcion activo" onclick="cambiarSeleccion(this, 'origen')">C-328</button>
-            <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">D-05</button>
-            <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">B-X</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">D-02</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">D-01</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">B-07</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">LIN</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">B-02</button>
-		        <button class="btn-opcion" onclick="cambiarSeleccion(this, 'origen')">C-332</button>
-                
-            </div>
-        </div>
-        <div class="fila-botones">
-            <label>Estado Orig.:</label>
-            <div class="grupo">
-                <button class="btn-opcion activo" onclick="cambiarSeleccion(this, 'estOrigen')"> E </button>
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')">B</button>
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> U </button>
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> A </button>         
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> DD </button>         
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> I </button>         
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> R </button>         
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'estOrigen')"> S </button>         
-                
-            </div>
-        </div>
-        <div class="fila-botones">
-            <label>Destino :</label>
-            <div class="grupo">
-                <button class="btn-opcion activo" onclick="cambiarSeleccion(this, 'destino')">B-01</button>
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'destino')">B-07</button>
-                <button class="btn-opcion" onclick="cambiarSeleccion(this, 'destino')">C-770</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUADRO DE LECTURA -->
-    <!-- Modificación en tu franja-lector: Quitamos el autofocus rígido -->
-<div class="franja-lector">
-    <label for="txt-lector">LECTURA QR:</label>
-    <input type="text" id="txt-lector" class="input-qr" placeholder="Digite aquí..." onkeypress="procesarLectura(event)">
-</div>
-
-    <!-- TABLA DE HISTORIAL RESPONSIVA -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-  <div style="display: flex; align-items: center; gap: 15px;">
-    <h3 style="margin: 0; font-family: sans-serif;">Registros</h3>
-    <!-- NUESTRO BOTÓN INTERRUPTOR INTERACTIVO -->
-    <button id="btn-cambiar-modo" onclick="conmutarModoVista()" style="background-color: #2563eb; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: background 0.2s;">
-      📊 Ver SubTotales
-    </button>
-  </div>
-  <button id="btn-grabar-vista" onclick="grabartabla()" class="btn-grabar">Grabar Tabla</button>
-  <button id="btn-limpiar-vista" onclick="limpiarPantallaCompleta()" class="btn-limpiar">Limpiar Vista</button>
-</div>
+    <h2>Calibración de Movimiento</h2>
+    <p>Usa esta pantalla en el celular reciclado para analizar los impactos físicos con guantes.</p>
     
-    <div class="tabla-contenedor">
-        <table id="tabla-registros">
-            <thead>
-                <tr>
-                    <th>Fecha Hora</th>
-                    <th>Origen</th>
-                    <th>Est.Orig</th>
-                    <th>QR Serial</th>
-                    <th>Producto</th>
-                    <th>Serie</th>
-                    <th>Est.Sal</th>
-                    <th>Destino</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-cuerpo"></tbody>
-        </table>
-    </div>
-</div>
+    <!-- Algunos navegadores exigen un clic del usuario antes de activar sensores -->
+    <button onclick="solicitarPermisos()">Activar Sensores</button>
 
-<!-- VENTANA EMERGENTE GIGANTE PARA CONFIRMACIÓN DE LECTURA -->
-<!-- >>> BUSCA EL DIV DE #modal-exito-gigante Y REEMPLÁZALO COMPLETAMENTE CON ESTO <<< -->
-<div id="modal-exito-gigante" onclick="pantallaVerdePresionada()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(16,185,129,0.98); z-index:10000; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:sans-serif; text-align:center; padding:20px; box-sizing:border-box; cursor:pointer;">
- <div style="font-size: 1.8rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; opacity: 0.9;">Lectura Exitosa</div>
- 
- <div style="background:rgba(0,0,0,0.2); padding: 25px 40px; border-radius: 16px; min-width: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
-   <div style="font-size: 1.2rem; opacity: 0.85; margin-bottom: 5px;">SKU:</div>
-   <div id="exito-sku" style="font-size: 3.1rem; font-weight: 900; line-height: 1; margin-bottom: 25px; word-break: break-all; letter-spacing: 1px;">-</div>
- 
-   <div style="font-size: 1.2rem; opacity: 0.85; margin-bottom: 5px;">SERIE:</div>
-   <div id="exito-serie" style="font-size: 3.1rem; font-weight: 900; line-height: 1; word-break: break-all; color: #fef08a; letter-spacing: 1px;">-</div>
- </div>
- <div style="font-size: 1.3rem; margin-top: 40px; opacity: 0.9; font-weight: bold; animation: pulse 1.5s infinite;">👇 TOQUE LA PANTALLA <br> PARA <br> EL SIGUIENTE QR 👇</div>
-</div>
+    <div class="eje">Eje X (Lateral): <span id="valX">0</span></div>
+    <div class="eje">Eje Y (Longitudinal): <span id="valY">0</span></div>
+    <div class="eje">Eje Z (Vertical/Golpe): <span id="valZ">0</span></div>
+    <div class="eje">Eje X (Vertical/Golpe): <span id="incX">0</span></div>
+    <div class="eje">Eje Y (Vertical/Golpe): <span id="incY">0</span></div>
+    <div class="eje">Eje Z (Vertical/Golpe): <span id="incZ">0</span></div>
 
+    <h3>Registro de Eventos Detectados:</h3>
+    <div id="consolaLog" class="consola"></div>
 
-<script>
-// 1. CONFIGURACIÓN COMPLETA DE TU ENTORNO REMOTO DE GOOGLE
-const URL_GOOGLE_APP = "https://script.google.com/macros/s/AKfycbzoGUyCM56jgevb97TDkkN5Urtcccb-wI4HaEQOYIKxhP2howg5HaGA5QAyl66osnDsuw/exec";
-const MINUTOS_RESTRICCION_DUPLICADO = 600;
-
-let configuracionActual = {
-    origen: 'C-328',
-    estOrigen: 'E',
-    destino: 'B-01'
-};
-let historialLecturas = JSON.parse(localStorage.getItem('historial_bodega')) || [];
-
-// Variables globales para el control estricto de memoria de la cámara
-let streamActivoBodega = null;
-let bucleAnalisisBodega = null;
-let bucleEscaneo = null;	
-let detectorNativoBodega = null;
-let analisisEnProgreso = false;
-// Variable global para reutilizar el mismo canal de audio ya aprobado por el usuario
-let miAudioContextIndustrial = null;
-
-// Variable global para controlar qué tabla se renderiza ("listado" o "subtotales")
-let modoVistaActual = "listado";
-
-// Función que cambia el modo al presionar el botón
-function conmutarModoVista() {
-  const boton = document.getElementById('btn-cambiar-modo');
-  
-  if (modoVistaActual === "listado") {
-    modoVistaActual = "subtotales";
-    boton.innerText = "📋 Ver Listado";
-    boton.style.backgroundColor = "#4b5563"; // Gris para indicar el cambio
-  } else {
-    modoVistaActual = "listado";
-    boton.innerText = "📊 Ver SubTotales";
-    boton.style.backgroundColor = "#2563eb"; // Azul clásico
-  }
-  
-  // Redibujamos la tabla instantáneamente con el nuevo modo aplicado
-  actualizarTablaVista();
-}
-
-function grabartabla() {
-    const tabla = document.getElementById("tabla-registros");
-    const clonParaExcel = tabla.cloneNode(true);
-    clonParaExcel.querySelectorAll("tbody tr").forEach(fila => {
-        const inputS = fila.querySelector(".input-serie");
-        if (inputS) {
-            const tdS = inputS.closest("td");
-            tdS.innerText = inputS.value.trim() || "-";
-        }
-    });
-    let htmlTabla = clonParaExcel.outerHTML;
-    let plantillaExcel = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://w3.org"><head><meta charset="UTF-8"><style>td { mso-number-format:"\\@"; }</style></head><body>${htmlTabla}</body></html>`;
-    let blob = new Blob([plantillaExcel], { type: "application/vnd.ms-excel;charset=utf-8" });
-    let url = URL.createObjectURL(blob);
-    let link = document.createElement("a");
-
-    const Jahora = new Date(); 
-    const Janio = Jahora.getFullYear();
-    const Jmes = String(Jahora.getMonth() + 1).padStart(2, '0');
-    const Jdia = String(Jahora.getDate()).padStart(2, '0');
-
-    // Reemplazamos los ":" por "-" para que el nombre de archivo sea válido
-    const JhoraFormateada = Jahora.toLocaleTimeString('es-ES', { hour12: false }).replace(/:/g, '-');
-
-    const JtimestampStr = `${Janio}-${Jmes}-${Jdia}-${JhoraFormateada}`;
-
-    link.href = url; 
-    link.download = `Registro-Bodega-S-${JtimestampStr}.xls`;
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-}
-
-
-window.onload = function() {
-    actualizarTablaVista();
-    sincronizarMotorHardware(); // Inicializa el detector al cargar
-
-       // Foco manual controlado SOLO al iniciar la app
-    const input = document.getElementById('C-328');
-    if (input) input.focus();
-};
-
-function cambiarSeleccion(botonPresionado, propiedad) {
-    const contenedorGrupo = botonPresionado.parentElement;
-    const botonesDelGrupo = contenedorGrupo.querySelectorAll('.btn-opcion');
-    botonesDelGrupo.forEach(btn => btn.classList.remove('activo'));
-    botonPresionado.classList.add('activo');
-    configuracionActual[propiedad] = botonPresionado.innerText;
-//    document.getElementById('txt-lector').focus();
-}
-
-// 2. NUEVA FUNCIÓN: CONFIRMACIÓN ACÚSTICA INDUSTRIAL (750 Hz) - OPTIMIZADA MÓVIL
-function sonarBip750Hz() {
-  try {
-    // 1. Si no existe el contexto, lo creamos (Ojo: subimos volumen a 0.6 para la bodega)
-    if (!miAudioContextIndustrial) {
-      miAudioContextIndustrial = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    
-    const audioCtx = miAudioContextIndustrial;
-
-    // 2. TRUCO MÓVIL: Si el celular lo suspendió, lo obligamos a despertar
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(890, audioCtx.currentTime);
-    
-    // Subimos de 0.2 a 0.8 para que compita contra el ruido ambiental de las grúas horquilla
-    gainNode.gain.setValueAtTime(0.98, audioCtx.currentTime);
-    
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.10);
-  } catch (e) { 
-    console.error("Audio bloqueado:", e); 
-  }
-}
-
-// >>> NUEVAS REGLAS DE NAVEGACIÓN EN RÁFAGA <<<
-
-function mostrarConfirmacionGigante(sku, serie) {
-  document.getElementById('exito-sku').innerText = String(sku).toUpperCase();
-  document.getElementById('exito-serie').innerText = String(serie).toUpperCase();
-  
-  // Desplegamos el modal verde gigante
-  const modalExito = document.getElementById('modal-exito-gigante');
-  modalExito.style.display = "flex";
-  
-  // ¡IMPORTANTE!: Quitamos el setTimeout automático para que se quede esperando el toque del operario
-}
-
-
-	function pantallaVerdePresionada() {
-  // 1. Escondemos el cartel de éxito
-  document.getElementById('modal-exito-gigante').style.display = "none";
-  
-  // 2. LLAMAMOS AL ENCENDIDO ORIGINAL (Levanta el hardware de cero de forma limpia)
-  encenderCamaraBodega(); //
-}
-	
-// 3. NUEVA FUNCIÓN: COMPROBACIÓN NATIVA DE DISPOSITIVOS
-function sincronizarMotorHardware() {
-    if ('BarcodeDetector' in window) {
-        detectorNativoBodega = new BarcodeDetector({ formats: ['qr_code'] });
-        // Modificamos visualmente el label azul para que el operador sepa que puede usar la cámara
-        const labelLector = document.querySelector('label[for="txt-lector"]');
-        if (labelLector) {
-            labelLector.innerHTML = "📸 LECTURA QR (Presione)";
-            labelLector.style.cursor = "pointer";
-            labelLector.style.textDecoration = "underline";
-            labelLector.onclick = encenderCamaraBodega;
-        }
-    }
-}
-
-    
-// 4. NUEVA FUNCIÓN: TRANSMISIÓN DE VIDEO CON RESOLUCIÓN EN BODEGA (CORREGIDA)
-async function encenderCamaraBodega() {
-    // 1. Escondemos el teclado de forma forzada
-    const inputReal = document.getElementById('C-328');
-
-    if (inputReal) {
-        inputReal.blur();
-      }
- 	// >>> APAGAR EL TECLADO EN EL LECTOR QR <<<
- 	document.getElementById('txt-lector').setAttribute('inputmode', 'none');
-	analisisEnProgreso = false;
-	// Al tocar el botón con el dedo, disparamos esto para habilitar el permiso del parlante
-    sonarBip750Hz(); 
-  
-    // 2. Si no existe la interfaz del visor en el HTML, la inyectamos dinámicamente
-    let modal = document.getElementById('modal-escaner');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-escaner';
-        // AJUSTE: Cambiamos center por flex-start y agregamos padding-top para SUBIR la imagen de la cámara
-        modal.style = "display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:flex-start; padding-top:40px; flex-direction:column;";
-        modal.innerHTML = `
-            <div style="width:300px; height:300px; border:4px dashed #0d6efd; border-radius:12px; overflow:hidden; background:#000; position:relative;">
-                <video id="video-bodega-stream" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
-                <div id="laser-guia" style="position:absolute; top:50%; left:10%; width:80%; height:2px; background:rgba(255,0,0,0.7); box-shadow:0 0 4px #ff0000; pointer-events:none; z-index:10;"></div>
-            </div>
-            <button onclick="apagarCamaraBodega()" style="margin-top:30px; padding:20px 25px; background:#dc3545; font-size:1.5rem; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">❌ Cancelar Escaneo</button>
-        `;
-        document.body.appendChild(modal);
-    }
-
-    // 3. RETRASO CRÍTICO Eliminado : Esperamos 150ms a que el teclado baje antes de renderizar la cámara
-    
-        modal.style.display = "flex"; 
-        const video = document.getElementById('video-bodega-stream');
-
-        try {
-            streamActivoBodega = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: false
-                });
-            video.srcObject = streamActivoBodega;
-            bucleEscaneo = setInterval(analizarCuadroEnVivo, 400); 
-	//		analizarCuadroEnVivo();
-        } catch (err) {
-            alert("Acceso a la cámara trasera denegado o no disponible.");
-            modal.style.display = "none";
-            }
-   
-}
-
-
-// 5. NUEVA FUNCIÓN: ANÁLISIS ACELERADO POR GPU (Filtra, Inyecta y ejecuta Enter)
-async function analizarCuadroEnVivo() {
-    const video = document.getElementById('video-bodega-stream');
-    if (video && video.readyState === video.HAVE_ENOUGH_DATA && detectorNativoBodega) {
-        try {
-			if (analisisEnProgreso) return; 
-            analisisEnProgreso = true; // Cerramos la compuerta
-            const codigos = await detectorNativoBodega.detect(video);
-            if (codigos.length > 0) {
-                // ¡CAPTURA EXITOSA!
-				clearInterval(bucleEscaneo);
-                apagarCamaraBodega(); // Apaga inmediatamente el hardware liberando RAM             
-                const input = document.getElementById('txt-lector');
-                input.value = codigos[0].rawValue; // Setea la cadena compleja (ej: CH-5050NG#2605000002#B)
-                
-                
-                sonarBip750Hz();
-                // Simulamos la pulsación física de la tecla Enter para disparar tu lógica nativa de guardado
-                const fakeEvent = { key: 'Enter' };
-                procesarLectura(fakeEvent);
-            } else {
-				analisisEnProgreso = false;
-			//	setTimeout(analizarCuadroEnVivo, 300);
-			}
-        } catch (e) { analisisEnProgreso = false; /* Silencio cuadro a cuadro */ }
-    }
-}
-
-// 6. NUEVA FUNCIÓN: APAGADO Y CONTROL DE FOCO POS-ESCANEO
-function apagarCamaraBodega() {
-   // clearInterval(bucleEscaneo);
-    if (streamActivoBodega) {
-        streamActivoBodega.getTracks().forEach(track => track.stop());
-    }
-    const modal = document.getElementById('modal-escaner');
-    if (modal) modal.style.display = "none";
-    
-    // 🚀 EL TRUCO DE FOCO INDUSTRIAL:
-    // En lugar de hacer focus() en la caja de texto (lo que levantaría el teclado),
-    // buscamos el primer botón de "Anular" disponible en tu tabla azul.
-    const primerBotonAnular = document.querySelector('.btn-anular');
-    
-    if (primerBotonAnular) {
-        primerBotonAnular.focus(); // El foco se queda atrapado en el botón sin abrir el teclado
-        console.log("Teclado abajo. Foco posicionado en el botón Anular.");
-    } else {
-        // Fallback: Si la tabla está vacía y no hay botones, simplemente le quitamos 
-        // el foco a toda la página para asegurar que el teclado no se levante.
-        document.activeElement.blur();
-    }
-	// >>> AÑADE ESTA LÍNEA AQUÍ PARA RESTAURAR EL TECLADO PARA LECTURAS MANUALES FUTURAS <<<
- 	document.getElementById('txt-lector').setAttribute('inputmode', 'text');
-}
-
-// --- TU LÓGICA DE NEGOCIO ORIGINAL INTEGRADA SINTÁCTICAMENTE ---
-function procesarLectura(evento) {
-    if (evento.key !== 'Enter') return;
-    const input = document.getElementById('txt-lector');
-    const cadenaQR = input.value.trim();
-    if (cadenaQR === "") return;
-
-    if (!cadenaQR.includes('#')) {
-    alert("¡CÓDIGO NO VÁLIDO!\n\nAl código le falta el separador #).\n\nPor favor, intente leer nuevamente.");
-    input.value = "";
-    return;
-  }
-    
-    const segmentos = cadenaQR.split('#');
-    const skuExtraido = segmentos[0] || 'ERROR';
-    const serieExtraida = segmentos[1] || 'ERROR';
-    const estadoDestinoExtraido = segmentos[2] || '-';
-    const momentoActual = Date.now();
-
-	// >>> REEMPLAZA EL BLOQUE DE REGISTRO DUPLICADO CON ESTE CONTROL DE SEGURIDAD <<<
-	const registroDuplicado = historialLecturas.find(item => 
-  		item &&
-  		item.serie === serieExtraida && 
-  		serieExtraida !== 'ERROR' && // Evita falsos positivos con lecturas corruptas iniciales
-  		item.esAnulado === false &&
-  		item.estadoOrigen !== 'ANULADO'
-		);	
-	
-//	const registroDuplicado = historialLecturas.find(item => 
-//        item.serie === serieExtraida && 
-  //      item.esAnulado === false &&
-  // 	  item.estadoOrigen !== 'ANULADO'
- //			);
-
-	if (registroDuplicado && registroDuplicado.id) { // Validamos que tenga un ID real
-  const diferenciaMinutos = (momentoActual - registroDuplicado.id) / (1000 * 60);
-  if (diferenciaMinutos < MINUTOS_RESTRICCION_DUPLICADO) {
-    const minsRestantes = (MINUTOS_RESTRICCION_DUPLICADO - diferenciaMinutos).toFixed(1);
-    alert(`¡PRODUCTO DUPLICADO!\n\nLa serie [${serieExtraida}] ya fue registrada hace ${diferenciaMinutos.toFixed(1)} minutos.\nEspere ${minsRestantes} minutos para repetir.`);
-    input.value = "";
-    return;
-	  
- //   if (registroDuplicado) {
- //       const diferenciaMinutos = (momentoActual - registroDuplicado.id) / (1000 * 60);
-  //      if (diferenciaMinutos < MINUTOS_RESTRICCION_DUPLICADO) {
- //           const minsRestantes = (MINUTOS_RESTRICCION_DUPLICADO - diferenciaMinutos).toFixed(1);
- //           alert(`¡PRODUCTO DUPLICADO!\n\nLa serie [${serieExtraida}] ya fue registrada hace ${diferenciaMinutos.toFixed(1)} minutos.\nEspere ${minsRestantes} minutos para repetir.`);
-  //          input.value = "";
-     //       input.focus();
-  //          return;
-        }
-    }
-    
-    const ahora = new Date(momentoActual);
-    const anio = ahora.getFullYear();
-    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dia = String(ahora.getDate()).padStart(2, '0');
-    const horaFormateada = ahora.toLocaleTimeString('es-ES', { hour12: false });
-    const timestampStr = `${dia}/${mes}/${anio} ${horaFormateada}`;
-    
-    const nuevoRegistro = {
-        id: momentoActual,
-        fechaHora: timestampStr,
-        origen: configuracionActual.origen,
-        estadoOrigen: configuracionActual.estOrigen,
-        qrCompleto: cadenaQR,
-        sku: skuExtraido,
-        serie: serieExtraida,
-        estadoDestino: estadoDestinoExtraido,
-        destino: configuracionActual.destino,
-        esAnulado: false
-    };
-    
-    historialLecturas.unshift(nuevoRegistro);
-    guardarEnMemoriaLocal();
-    actualizarTablaVista();
-
-    // DISPARADOR DEL CARTEL GIGANTE: Añade esta línea aquí abajo
-    mostrarConfirmacionGigante(skuExtraido, serieExtraida);
-
-    enviarAGoogleSheets(nuevoRegistro);
-
-
-
-    input.value = "";
-   // input.focus();
-}
-
-function solicitarAnulacion(idRegistro) {
-    const registro = historialLecturas.find(item => item.id === idRegistro);
-    if (registro && !registro.esAnulado) {
-        registro.esAnulado = true;
-      //  registro.estadoOrigen = "R"; 
-      //  registro.estadoDestino = "ANULADO"; 
-        registro.destino = "NULO"; // +String(idRegistro); 
-        guardarEnMemoriaLocal();
-        actualizarTablaVista();
-        enviarAGoogleSheets(registro);
-    }
-    document.getElementById('C-328').focus();
-}
-
-function guardarEnMemoriaLocal() {
-    localStorage.setItem('historial_bodega', JSON.stringify(historialLecturas));
-}
-
-function limpiarPantallaCompleta() {
-    if(confirm("¿Desea limpiar la lista de la pantalla?\n(Esto no borrará los datos ya guardados en Google Sheets)")) {
-        historialLecturas = [];
-        localStorage.removeItem('historial_bodega');
-        actualizarTablaVista();
-    }
-    document.getElementById('C-328').focus();
-}
-
-function enviarAGoogleSheets(objetoRegistro) {
-  // Buscamos la fila superior de la tabla (el último escaneo realizado)
-  const primeraFila = document.querySelector("#tabla-cuerpo tr:first-child");
-  const botonAnular = primeraFila ? primeraFila.querySelector(".btn-anular") : null;
-
-  // CAMINO OFFLINE: Si el celular está en modo avión
-  if (!navigator.onLine) {
-    console.warn("Dispositivo Offline. El botón se mantiene en 'Anular' (Amarillo).");
-    objetoRegistro.sincronizado = false;
-    guardarEnMemoriaLocal(); // Guardamos el estado 'no sincronizado' en la RAM/Storage
-    return;
-  }
-
-  // CAMINO ONLINE: Intento de transmisión normal
-  fetch(URL_GOOGLE_APP, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(objetoRegistro)
-  })
-  .then(() => {
-    // ¡ÉXITO DE SUBIDA! Cambiamos a mayúsculas, quitamos amarillo y actualizamos memoria
-    console.log("Transmisión exitosa. Cambiando estado a ANULAR.");
-    objetoRegistro.sincronizado = true;
-    guardarEnMemoriaLocal();
-
-    if (botonAnular && botonAnular.innerText === "Anular") {
-      botonAnular.innerText = "ANULAR";
-      botonAnular.style.cssText = ""; // Limpia el color amarillo instantáneamente
-    }
-  })
-  .catch(err => {
-    console.error("Fallo de red al transmitir remotamente:", err);
-    objetoRegistro.sincronizado = false;
-    guardarEnMemoriaLocal();
-  });
-}
-
-function actualizarTablaVista() {
-  const tbody = document.getElementById('tabla-cuerpo');
-  const thead = document.querySelector("table thead");
-  if (!tbody || !thead) return;
-
-  // MODO 1: LISTADO UNITARIO CRONOLÓGICO (Modo actual)
-  if (modoVistaActual === "listado") {
-    thead.innerHTML = `
-      <tr>
-        <th>Fecha y Hora</th>
-        <th>Origen</th>
-        <th>Est.Or</th>
-        <th>QR Serial</th>
-        <th>Producto</th>
-        <th>Serie</th>
-        <th>Est.Des</th>
-        <th>Destino</th>
-        <th>Acción</th>
-      </tr>
-    `;
-
-    tbody.innerHTML = "";
-    historialLecturas.forEach(reg => {
-      const fila = document.createElement('tr');
-      if (reg.esAnulado) fila.classList.add('registro-anulado');
-      
-      const yaSincronizado = reg.sincronizado === true;
-      const botonTexto = yaSincronizado ? "ANULAR" : "Anular";
-      const botonEstilo = yaSincronizado ? "" : "background-color: #fef08a; color: #854d0e; font-weight: bold; border: 1px solid #ca8a04;";
-
-      fila.innerHTML = `
-        <td>${reg.fechaHora}</td>
-        <td>${reg.origen}</td>
-        <td><strong>${reg.estadoOrigen}</strong></td>
-        <td>${reg.qrCompleto}</td>
-        <td>${reg.sku}</td>
-        <td>${reg.serie}</td>
-        <td><strong>${reg.estadoDestino}</strong></td>
-        <td>${reg.destino}</td>
-        <td>
-          ${ (!reg.esAnulado) ?
-            `<button class="btn-anular" style="${botonEstilo}" onclick="solicitarAnulacion(${reg.id})">${botonTexto}</button>` :
-            `<span class="badge-anulado">${reg.estadoDestino === 'ANULADO' ? 'Anulado' : 'ANULADO'}</span>` }
-        </td>
-      `;
-      tbody.appendChild(fila);
-    });
-
-  // MODO 2: SUBTOTALES POR SKU (Columna descripción eliminada)
-  // MODO 2: SUBTOTALES POR SKU - VERSIÓN LIMPIA, ULTRA-SEGURA Y EN SEGUNDOS INDUSTRIALES
-  } else if (modoVistaActual === "subtotales") {
-    // Definimos el encabezado limpio de 4 columnas que calza perfecto en celulares
-    thead.innerHTML = `
-      <tr>
-        <th>Producto</th>
-        <th style="text-align: center;">Válidos</th>
-        <th style="text-align: center;">Anulados</th>
-        <th style="text-align: center;">Total</th>
-      </tr>
-    `;
-
-    tbody.innerHTML = "";
-
-    // Objeto contenedor para la suma de la sesión
-    const agrupadoSKU = {};
-
-    // Agrupamos el historial de forma directa y nativa
-    historialLecturas.forEach(reg => {
-      // Nos aseguramos de limpiar espacios para evitar duplicados visuales
-      const skuClave = reg.sku ? String(reg.sku).trim() : "ERROR";
-
-      if (!agrupadoSKU[skuClave]) {
-        agrupadoSKU[skuClave] = {
-          sku: skuClave,
-          validos: 0,
-          anulados: 0
-        };
-      }
-      
-      // Clasificación directa basada en tu bandera de anulación en pantalla
-      if (reg.esAnulado) {
-        agrupadoSKU[skuClave].anulados++;
-      } else {
-        agrupadoSKU[skuClave].validos++;
-      }
-    });
-
-    // Dibujamos las filas con los mismos estilos y colores aprobados
-    Object.values(agrupadoSKU).forEach(item => {
-      const fila = document.createElement('tr');
-      const totalPorSKU = item.validos + item.anulados;
-
-      fila.innerHTML = `
-        <td><strong style="width: 100px; color: #1e3a8a; letter-spacing: 0.5px; font-size: 1.1rem;">${item.sku}</strong></td>
-        <td style="width: 80px; text-align: center; color: #16a34a; font-weight: bold; font-size: 1.1rem;">${item.validos} u.</td>
-        <td style="width: 80px; text-align: center; color: ${item.anulados > 0 ? '#dc2626' : '#9ca3af'}; font-weight: ${item.anulados > 0 ? 'bold' : 'normal'}; font-style: ${item.anulados > 0 ? 'normal' : 'italic'};">${item.anulados} u.</td>
-        <td style="width: 80px; text-align: center; font-weight: bold; background-color: #f3f4f6;">${totalPorSKU} u.</td>
-      `;
-      tbody.appendChild(fila);
-    });
-    
-    // Alerta visual si la tabla se encuentra vacía
-    if (Object.keys(agrupadoSKU).length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:#9ca3af;">No hay datos capturados en esta sesión para resumir.</td></tr>`;
-    }
-  }
-
-  
-}
-
-
-function sincronizarHistorialPendiente() {
-  if (!navigator.onLine) return;
-
-  console.log("Señal restablecida. Escaneando botones 'Anular' pendientes...");
-  
-  // Recorremos nuestro arreglo local buscando los que se quedaron sin sincronizar
-  historialLecturas.forEach((reg, index) => {
-    if (reg.sincronizado !== true      ) {                    //   && !reg.esAnulado ... despues de true y antes del )
-      
-      fetch(URL_GOOGLE_APP, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(reg)
-      })
-      .then(() => {
-        // Marcamos como completado
-        reg.sincronizado = true;
-        guardarEnMemoriaLocal();
+    <script>
+        const logPanel = document.getElementById('consolaLog');
         
-        // Buscamos el botón específico en la pantalla para actualizarlo en vivo
-        const filasHTML = document.querySelectorAll("#tabla-cuerpo tr");
-        if (filasHTML[index]) {
-          const boton = filasHTML[index].querySelector(".btn-anular");
-          if (boton && boton.innerText === "Anular") {
-            boton.innerText = "ANULAR";
-            boton.style.cssText = ""; // Remueve el amarillo
-          }
+        function log(texto) {
+            logPanel.innerHTML += `[${new Date().toLocaleTimeString()}] ${texto}<br>`;
+            logPanel.scrollTop = logPanel.scrollHeight;
         }
-      })
-      .catch(e => console.error("Reintento fallido para registro id: " + reg.id, e));
-    }
-  });
-}
 
-// Disparadores nativos del dispositivo móvil
-window.addEventListener('online', sincronizarHistorialPendiente);
-document.addEventListener("DOMContentLoaded", () => {
-  // Por si el celular inicia con registros pendientes acumulados de turnos anteriores
-  setTimeout(sincronizarHistorialPendiente, 2500);
-});
+        function solicitarPermisos() {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                // Caso específico para iOS modernos (por si acaso)
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            conectarAcelerometro();
+                        } else {
+                            log("Permiso denegado por el usuario.");
+                        }
+                    });
+            } else {
+                // Caso estándar para la mayoría de dispositivos Android viejos
+                conectarAcelerometro();
+            }
+        }
 
-</script>
+        function conectarAcelerometro() {
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', procesarMovimiento, false);
+				window.addEventListener('deviceorientation', procesarMovimiento, false);
+                log("Acelerómetro conectado exitosamente.");
+            } else {
+                log("ERROR: Este celular reciclado no soporta DeviceMotionEvent.");
+            }
+        }
 
+        function procesarMovimiento(event) {
+            // Usamos la aceleración con gravedad porque en celulares viejos es más cruda y reactiva
+            const acc = event.accelerationIncludingGravity;
+			const inclX = event.alfa;
+			const inclY = event.beta;
+			const inclZ = event.gamma;
+            if (!acc) return;
+
+            // Mostrar valores en tiempo real (redondeados para legibilidad)
+            document.getElementById('valX').innerText = acc.x.toFixed(2);
+            document.getElementById('valY').innerText = acc.y.toFixed(2);
+            document.getElementById('valZ').innerText = acc.z.toFixed(2);
+            document.getElementById('incX').innerText = inclX.toFixed(2);
+            document.getElementById('incY').innerText = inclY.toFixed(2);
+            document.getElementById('incZ').innerText = inclZ.toFixed(2);
+
+            // --- LÓGICA DE FILTRADO PARA DISCUSIÓN ---
+            
+            // Umbral estricto para el golpe en Z (ignora gravedad base de 9.8)
+            // Si el teléfono está en la mesa (Z ≈ 9.8) y le pegan, el valor se dispara o cae bruscamente.
+            const fuerzaZpura = Math.abs(acc.z - 9.8); 
+
+            if (fuerzaZpura > 12) { 
+                log(`¡GOLPE EN Z DETECTADO! Fuerza pura: ${fuerzaZpura.toFixed(2)}`);
+                // Aquí verificaríamos si X e Y se mantuvieron relativamente bajos 
+                // para asegurar que el teléfono NO se levantó ni se giró.
+                if (Math.abs(acc.x) < 5 && Math.abs(acc.y) < 5) {
+                    log("👉 CONFIRMADO: Esto fue un golpe seco en la mesa (X e Y estables).");
+                }
+            }
+
+            // Detectar si el teléfono está siendo levantado o inclinado bruscamente en Y
+            if (Math.abs(acc.y) > 8) {
+                log(`⚠️ MOVIMIENTO EN Y: El teléfono se inclinó hacia adelante/atrás.`);
+            }
+            
+            // Detectar si el teléfono se movió de lado
+            if (Math.abs(acc.x) > 8) {
+                log(`⚠️ MOVIMIENTO EN X: El teléfono se desplazó lateralmente.`);
+            }
+        }
+    </script>
 </body>
 </html>

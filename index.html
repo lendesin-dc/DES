@@ -1,109 +1,174 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Calibrador de Acelerómetro Industrial</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background: #222; color: #fff; }
-        .eje { font-size: 34px; margin: 10px 0; font-family: monospace; }
-        .consola { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 14px; color: #0f0; }
-        button { padding: 15px; font-size: 15px; background: #007bff; color: white; border: none; border-radius: 5px; width: 100%; margin-bottom: 20px;}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prueba OCR Nativo + Encuadre + Golpe</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
+    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
+    video { width: 100%; display: block; }
+    /* Recuadro guía que coincide con el recorte del canvas */
+    .encuadre {
+      position: absolute; top: 35%; left: 10%; width: 80%; height: 30%;
+      border: 3px solid #00ff88; border-radius: 8px; box-sizing: border-box;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); pointer-events: none;
+    }
+    .panel { padding: 15px; }
+    #estado { color: #aaa; font-size: 0.9rem; margin-bottom: 8px; }
+    #resultado {
+      font-size: 1.4rem; font-weight: bold; color: #00ff88;
+      background: #222; padding: 12px; border-radius: 6px; min-height: 30px;
+    }
+    button {
+      width: 100%; max-width: 400px; padding: 16px; font-size: 1.1rem;
+      margin-top: 10px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
+    }
+    /* Canvas chico oculto (puedes cambiar display:none a inline-block para depurar el recorte) */
+    #canvas { display: none; border: 1px solid red; margin-top: 10px; }
+  </style>
 </head>
 <body>
 
-    <h2>Calibración de Movimiento</h2>
-    <p>Usa esta pantalla en el celular reciclado para analizar los impactos físicos con guantes.</p>
-    
-    <!-- Algunos navegadores exigen un clic del usuario antes de activar sensores -->
-    <button onclick="solicitarPermisos()">Activar Sensores</button>
+  <div class="visor">
+    <video id="video" autoplay playsinline></video>
+    <div class="encuadre"></div>
+  </div>
 
-    <div class="eje">Eje X (Lateral): <span id="valX">0</span></div>
-    <div class="eje">Eje Y (Longitudinal): <span id="valY">0</span></div>
-    <div class="eje">Eje Z (Vertical/Golpe): <span id="valZ">0</span></div>
-    <div class="eje">Eje X (Vertical/Golpe): <span id="incX">0</span></div>
-    <div class="eje">Eje Y (Vertical/Golpe): <span id="incY">0</span></div>
-    <div class="eje">Eje Z (Vertical/Golpe): <span id="incZ">0</span></div>
+  <div class="panel">
+    <div id="estado">Toca "Iniciar" o da un golpe seco al equipo</div>
+    <div id="resultado">---</div>
+    <button id="btn-accion">Activar / Escanear</button>
+    <br>
+    <canvas id="canvas" width="640" height="480"></canvas>
+  </div>
 
-    <h3>Registro de Eventos Detectados:</h3>
-    <div id="consolaLog" class="consola"></div>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const estado = document.getElementById('estado');
+    const resultado = document.getElementById('resultado');
+    const btn = document.getElementById('btn-accion');
 
-    <script>
-        const logPanel = document.getElementById('consolaLog');
-        
-        function log(texto) {
-            logPanel.innerHTML += `[${new Date().toLocaleTimeString()}] ${texto}<br>`;
-            logPanel.scrollTop = logPanel.scrollHeight;
-        }
+    let detector = null;
+    let trackCamara = null;
+    let escaneando = false;
+    let ultimoGolpe = 0;
 
-        function solicitarPermisos() {
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                // Caso específico para iOS modernos (por si acaso)
-                DeviceMotionEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            conectarAcelerometro();
-                        } else {
-                            log("Permiso denegado por el usuario.");
-                        }
-                    });
-            } else {
-                // Caso estándar para la mayoría de dispositivos Android viejos
-                conectarAcelerometro();
-            }
-        }
+    // FILTRO: Ajusta esta expresión regular al formato que buscas (actual: 5 a 15 letras/números)
+    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
 
-        function conectarAcelerometro() {
-            if (window.DeviceMotionEvent) {
-                window.addEventListener('devicemotion', procesarMovimiento, false);
-				window.addEventListener('deviceorientation', procesarMovimiento, false);
-                log("Acelerómetro conectado exitosamente.");
-            } else {
-                log("ERROR: Este celular reciclado no soporta DeviceMotionEvent.");
-            }
-        }
+    async function iniciarSistema() {
+      if (!('TextDetector' in window)) {
+        estado.innerText = "ERROR: Activa 'Experimental Web Platform features' en chrome://flags";
+        return;
+      }
 
-        function procesarMovimiento(event) {
-            // Usamos la aceleración con gravedad porque en celulares viejos es más cruda y reactiva
-            const acc = event.accelerationIncludingGravity;
-			const inclX = event.alfa;
-			const inclY = event.beta;
-			const inclZ = event.gamma;
-            if (!acc) return;
+      try {
+        detector = window.TextDetector.create 
+          ? await TextDetector.create() 
+          : new TextDetector();
 
-            // Mostrar valores en tiempo real (redondeados para legibilidad)
-            document.getElementById('valX').innerText = acc.x.toFixed(2);
-            document.getElementById('valY').innerText = acc.y.toFixed(2);
-            document.getElementById('valZ').innerText = acc.z.toFixed(2);
-            document.getElementById('incX').innerText = inclX.toFixed(2);
-            document.getElementById('incY').innerText = inclY.toFixed(2);
-            document.getElementById('incZ').innerText = inclZ.toFixed(2);
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
 
-            // --- LÓGICA DE FILTRADO PARA DISCUSIÓN ---
+        video.srcObject = stream;
+        trackCamara = stream.getVideoTracks()[0];
+
+        video.onloadedmetadata = () => {
+          activarModoEscaneo(true);
+        };
+      } catch (err) {
+        estado.innerText = "Error de cámara: " + err.message;
+      }
+    }
+
+    async function activarModoEscaneo(activar) {
+      escaneando = activar;
+      estado.innerText = activar ? "Escaneando con luz guía..." : "En espera (golpea o toca para leer)";
+
+      // Control del Flash LED como luz guía
+      if (trackCamara && trackCamara.getCapabilities().torch) {
+        try {
+          await trackCamara.applyConstraints({ advanced: [{ torch: activar }] });
+        } catch (e) {}
+      }
+
+      if (activar) bucleOCR();
+    }
+
+    async function bucleOCR() {
+      if (!escaneando) return;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // 1. Recortar SOLO el área del recuadro verde hacia el canvas chico (640x240)
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        canvas.width = 640;
+        canvas.height = 240;
+
+        ctx.drawImage(
+          video,
+          vw * 0.10, vh * 0.35, vw * 0.80, vh * 0.30, // Origen (recuadro verde)
+          0, 0, canvas.width, canvas.height           // Destino (canvas chico)
+        );
+
+        try {
+          // 2. Ejecutar OCR nativo sobre el recorte
+          const bloques = await detector.detect(canvas);
+
+          for (const bloque of bloques) {
+            const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
             
-            // Umbral estricto para el golpe en Z (ignora gravedad base de 9.8)
-            // Si el teléfono está en la mesa (Z ≈ 9.8) y le pegan, el valor se dispara o cae bruscamente.
-            const fuerzaZpura = Math.abs(acc.z - 9.8); 
-
-            if (fuerzaZpura > 12) { 
-                log(`¡GOLPE EN Z DETECTADO! Fuerza pura: ${fuerzaZpura.toFixed(2)}`);
-                // Aquí verificaríamos si X e Y se mantuvieron relativamente bajos 
-                // para asegurar que el teléfono NO se levantó ni se giró.
-                if (Math.abs(acc.x) < 5 && Math.abs(acc.y) < 5) {
-                    log("👉 CONFIRMADO: Esto fue un golpe seco en la mesa (X e Y estables).");
-                }
+            // 3. Validar contra el filtro
+            if (FILTRO_REGEX.test(limpio)) {
+              resultado.innerText = limpio;
+              if (navigator.vibrate) navigator.vibrate(100); // Vibración de confirmación
+              
+              // Pausar escaneo y apagar flash tras lectura exitosa (ahorra batería)
+              await activarModoEscaneo(false);
+              return;
             }
-
-            // Detectar si el teléfono está siendo levantado o inclinado bruscamente en Y
-            if (Math.abs(acc.y) > 8) {
-                log(`⚠️ MOVIMIENTO EN Y: El teléfono se inclinó hacia adelante/atrás.`);
-            }
-            
-            // Detectar si el teléfono se movió de lado
-            if (Math.abs(acc.x) > 8) {
-                log(`⚠️ MOVIMIENTO EN X: El teléfono se desplazó lateralmente.`);
-            }
+          }
+        } catch (e) {
+          estado.innerText = "Fallo motor OCR (posible límite de Android Go): " + e.message;
         }
-    </script>
+      }
+
+      setTimeout(bucleOCR, 350);
+    }
+
+    // Activación por botón táctil gigante o tecla de volumen
+    btn.addEventListener('click', () => {
+      if (!trackCamara) iniciarSistema();
+      else activarModoEscaneo(!escaneando);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'AudioVolumeUp' || e.key === 'AudioVolumeDown') {
+        e.preventDefault();
+        if (!trackCamara) iniciarSistema();
+        else activarModoEscaneo(true);
+      }
+    });
+
+    // Activación por golpe seco o sacudida (Acelerómetro)
+    window.addEventListener('devicemotion', (e) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const fuerza = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+
+      if (fuerza > 22 && Date.now() - ultimoGolpe > 1500) {
+        ultimoGolpe = Date.now();
+        if (trackCamara && !escaneando) activarModoEscaneo(true);
+      }
+    });
+  </script>
 </body>
 </html>

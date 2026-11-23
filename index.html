@@ -3,29 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prueba OCR Nativo + Encuadre + Golpe</title>
+  <title>OCR Nativo - Franja Fina + Zoom</title>
   <style>
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
-    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
+    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; overflow: hidden; }
     video { width: 100%; display: block; }
-    /* Recuadro guía que coincide con el recorte del canvas */
+    
+    /* Ventana más baja (14% de alto) y centrada para una sola línea */
     .encuadre {
-      position: absolute; top: 35%; left: 10%; width: 80%; height: 30%;
-      border: 3px solid #00ff88; border-radius: 8px; box-sizing: border-box;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55); pointer-events: none;
+      position: absolute; top: 43%; left: 8%; width: 84%; height: 14%;
+      border: 3px solid #00ff88; border-radius: 6px; box-sizing: border-box;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65); pointer-events: none;
     }
-    .panel { padding: 15px; }
+    .panel { padding: 12px; }
     #estado { color: #aaa; font-size: 0.9rem; margin-bottom: 8px; }
     #resultado {
       font-size: 1.4rem; font-weight: bold; color: #00ff88;
-      background: #222; padding: 12px; border-radius: 6px; min-height: 30px;
+      background: #222; padding: 12px; border-radius: 6px; min-height: 28px;
     }
+    .botones { display: flex; gap: 10px; max-width: 450px; margin: 10px auto 0; }
     button {
-      width: 100%; max-width: 400px; padding: 16px; font-size: 1.1rem;
-      margin-top: 10px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
+      flex: 1; padding: 16px 10px; font-size: 1rem; font-weight: bold;
+      background: #0066cc; color: #fff; border: none; border-radius: 8px;
     }
-    /* Canvas chico oculto (puedes cambiar display:none a inline-block para depurar el recorte) */
-    #canvas { display: none; border: 1px solid red; margin-top: 10px; }
+    #btn-luz { background: #444; flex: 0.45; }
+    #btn-luz.activa { background: #d97706; }
+    #canvas { display: none; }
   </style>
 </head>
 <body>
@@ -36,11 +39,13 @@
   </div>
 
   <div class="panel">
-    <div id="estado">Toca "Iniciar" o da un golpe seco al equipo</div>
+    <div id="estado">Toca "Escanear" o golpea el equipo</div>
     <div id="resultado">---</div>
-    <button id="btn-accion">Activar / Escanear</button>
-    <br>
-    <canvas id="canvas" width="640" height="480"></canvas>
+    <div class="botones">
+      <button id="btn-accion">Activar / Escanear</button>
+      <button id="btn-luz">Luz: OFF</button>
+    </div>
+    <canvas id="canvas"></canvas>
   </div>
 
   <script>
@@ -50,14 +55,16 @@
     const estado = document.getElementById('estado');
     const resultado = document.getElementById('resultado');
     const btn = document.getElementById('btn-accion');
+    const btnLuz = document.getElementById('btn-luz');
 
     let detector = null;
     let trackCamara = null;
     let escaneando = false;
+    let luzActiva = false;
     let ultimoGolpe = 0;
 
-    // FILTRO: Ajusta esta expresión regular al formato que buscas (actual: 5 a 15 letras/números)
-    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
+    // Filtro exacto: empieza con #20000 y sigue con 10 números
+    const FILTRO_REGEX = /^#20000[0-9]{10}$/;
 
     async function iniciarSistema() {
       if (!('TextDetector' in window)) {
@@ -73,13 +80,29 @@
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 }, // Mayor resolución para letras chicas
+            height: { ideal: 1080 }
           }
         });
 
         video.srcObject = stream;
         trackCamara = stream.getVideoTracks()[0];
+
+        // Aplicar Zoom 2x y enfoque continuo si el lente lo soporta
+        const caps = trackCamara.getCapabilities();
+        const ajustes = { advanced: [] };
+
+        if (caps.zoom) {
+          const nivelZoom = Math.min(2.2, caps.zoom.max); // 2.2x para leer sin acercarse
+          ajustes.advanced.push({ zoom: nivelZoom });
+        }
+        if (caps.focusMode && caps.focusMode.includes('continuous')) {
+          ajustes.advanced.push({ focusMode: 'continuous' });
+        }
+
+        if (ajustes.advanced.length > 0) {
+          await trackCamara.applyConstraints(ajustes);
+        }
 
         video.onloadedmetadata = () => {
           activarModoEscaneo(true);
@@ -89,17 +112,9 @@
       }
     }
 
-    async function activarModoEscaneo(activar) {
+    function activarModoEscaneo(activar) {
       escaneando = activar;
-      estado.innerText = activar ? "Escaneando con luz guía..." : "En espera (golpea o toca para leer)";
-
-      // Control del Flash LED como luz guía
-      if (trackCamara && trackCamara.getCapabilities().torch) {
-        try {
-          await trackCamara.applyConstraints({ advanced: [{ torch: activar }] });
-        } catch (e) {}
-      }
-
+      estado.innerText = activar ? "Buscando #20000... (mantén distancia de 20-30 cm)" : "Pausado (golpea o toca para leer)";
       if (activar) bucleOCR();
     }
 
@@ -107,63 +122,66 @@
       if (!escaneando) return;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        // 1. Recortar SOLO el área del recuadro verde hacia el canvas chico (640x240)
         const vw = video.videoWidth;
         const vh = video.videoHeight;
+
+        // Recorte fino exacto del recuadro verde (top: 43%, left: 8%, width: 84%, height: 14%)
         canvas.width = 640;
-        canvas.height = 240;
+        canvas.height = 140;
 
         ctx.drawImage(
           video,
-          vw * 0.10, vh * 0.35, vw * 0.80, vh * 0.30, // Origen (recuadro verde)
-          0, 0, canvas.width, canvas.height           // Destino (canvas chico)
+          vw * 0.08, vh * 0.43, vw * 0.84, vh * 0.14,
+          0, 0, canvas.width, canvas.height
         );
 
         try {
-          // 2. Ejecutar OCR nativo sobre el recorte
           const bloques = await detector.detect(canvas);
 
           for (const bloque of bloques) {
-            const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
+            // Limpiar espacios y errores típicos de OCR (ej. letra 'O' por cero '0' tras el #)
+            let limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
             
-            // 3. Validar contra el filtro
             if (FILTRO_REGEX.test(limpio)) {
               resultado.innerText = limpio;
-              if (navigator.vibrate) navigator.vibrate(100); // Vibración de confirmación
-              
-              // Pausar escaneo y apagar flash tras lectura exitosa (ahorra batería)
-              await activarModoEscaneo(false);
+              if (navigator.vibrate) navigator.vibrate(100);
+              activarModoEscaneo(false);
               return;
             }
           }
         } catch (e) {
-          estado.innerText = "Fallo motor OCR (posible límite de Android Go): " + e.message;
+          estado.innerText = "Error OCR: " + e.message;
         }
       }
 
-      setTimeout(bucleOCR, 350);
+      setTimeout(bucleOCR, 300);
     }
 
-    // Activación por botón táctil gigante o tecla de volumen
+    // Botón principal
     btn.addEventListener('click', () => {
       if (!trackCamara) iniciarSistema();
       else activarModoEscaneo(!escaneando);
     });
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'AudioVolumeUp' || e.key === 'AudioVolumeDown') {
-        e.preventDefault();
-        if (!trackCamara) iniciarSistema();
-        else activarModoEscaneo(true);
+    // Botón manual de linterna (apagada por defecto)
+    btnLuz.addEventListener('click', async () => {
+      if (!trackCamara) return;
+      const caps = trackCamara.getCapabilities();
+      if (!caps.torch) {
+        estado.innerText = "Este equipo no permite controlar la luz desde el navegador";
+        return;
       }
+      luzActiva = !luzActiva;
+      await trackCamara.applyConstraints({ advanced: [{ torch: luzActiva }] });
+      btnLuz.innerText = luzActiva ? "Luz: ON" : "Luz: OFF";
+      btnLuz.classList.toggle('activa', luzActiva);
     });
 
-    // Activación por golpe seco o sacudida (Acelerómetro)
+    // Activación por golpe seco
     window.addEventListener('devicemotion', (e) => {
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
       const fuerza = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
-
       if (fuerza > 22 && Date.now() - ultimoGolpe > 1500) {
         ultimoGolpe = Date.now();
         if (trackCamara && !escaneando) activarModoEscaneo(true);

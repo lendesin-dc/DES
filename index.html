@@ -3,31 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OCR Nativo - Franja Fina + Zoom</title>
+  <title>Escáner Bodega OCR + Botón Volumen</title>
   <style>
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
-    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; overflow: hidden; }
+    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
     video { width: 100%; display: block; }
-    
-    /* Ventana más baja (14% de alto) y centrada para una sola línea */
+    /* Encuadre central */
     .encuadre {
-      position: absolute; top: 43%; left: 8%; width: 84%; height: 14%;
-      border: 3px solid #00ff88; border-radius: 6px; box-sizing: border-box;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65); pointer-events: none;
+      position: absolute; top: 35%; left: 10%; width: 80%; height: 30%;
+      border: 3px solid #00ff88; border-radius: 8px; box-sizing: border-box;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); pointer-events: none;
     }
-    .panel { padding: 12px; }
-    #estado { color: #aaa; font-size: 0.9rem; margin-bottom: 8px; }
+    .encuadre.escaneando { border-color: #ffaa00; }
+    .panel { padding: 15px; }
+    #estado { color: #ccc; font-size: 1rem; margin-bottom: 10px; }
     #resultado {
-      font-size: 1.4rem; font-weight: bold; color: #00ff88;
-      background: #222; padding: 12px; border-radius: 6px; min-height: 28px;
+      font-size: 1.6rem; font-weight: bold; color: #00ff88;
+      background: #222; padding: 14px; border-radius: 8px; min-height: 36px;
     }
-    .botones { display: flex; gap: 10px; max-width: 450px; margin: 10px auto 0; }
-    button {
-      flex: 1; padding: 16px 10px; font-size: 1rem; font-weight: bold;
-      background: #0066cc; color: #fff; border: none; border-radius: 8px;
+    #btn-iniciar {
+      width: 100%; max-width: 450px; padding: 20px; font-size: 1.2rem; font-weight: bold;
+      margin-top: 12px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
     }
-    #btn-luz { background: #444; flex: 0.45; }
-    #btn-luz.activa { background: #d97706; }
     #canvas { display: none; }
   </style>
 </head>
@@ -35,18 +32,20 @@
 
   <div class="visor">
     <video id="video" autoplay playsinline></video>
-    <div class="encuadre"></div>
+    <div id="marco" class="encuadre"></div>
   </div>
 
   <div class="panel">
-    <div id="estado">Toca "Escanear" o golpea el equipo</div>
+    <div id="estado">Toca el botón azul para iniciar turno</div>
     <div id="resultado">---</div>
-    <div class="botones">
-      <button id="btn-accion">Activar / Escanear</button>
-      <button id="btn-luz">Luz: OFF</button>
-    </div>
+    <button id="btn-iniciar">INICIAR TURNO (Activar Botón Volumen)</button>
     <canvas id="canvas"></canvas>
   </div>
+
+  <!-- Audio WAV silencioso embebido (44 bytes) para capturar botones físicos de volumen -->
+  <audio id="audio-truco" loop playsinline
+    src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA">
+  </audio>
 
   <script>
     const video = document.getElementById('video');
@@ -54,139 +53,140 @@
     const ctx = canvas.getContext('2d');
     const estado = document.getElementById('estado');
     const resultado = document.getElementById('resultado');
-    const btn = document.getElementById('btn-accion');
-    const btnLuz = document.getElementById('btn-luz');
+    const marco = document.getElementById('marco');
+    const btnIniciar = document.getElementById('btn-iniciar');
+    const audioTruco = document.getElementById('audio-truco');
 
     let detector = null;
     let trackCamara = null;
     let escaneando = false;
-    let luzActiva = false;
-    let ultimoGolpe = 0;
+    let ignorarCambioVolumen = false;
 
-    // Filtro exacto: empieza con #20000 y sigue con 10 números
-    const FILTRO_REGEX = /^#20000[0-9]{11}$/;
+    // 1. CONFIGURACIÓN DE TU BODEGA
+    const URL_SERVIDOR_WIFI = 'http://192.168.1'; // Cambia por tu IP local
+    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/; // Ajusta a tu formato de código
 
-    async function iniciarSistema() {
+    // 2. INICIAR SISTEMA (Requiere 1 toque inicial al abrir el turno)
+    btnIniciar.addEventListener('click', async () => {
       if (!('TextDetector' in window)) {
-        estado.innerText = "ERROR: Activa 'Experimental Web Platform features' en chrome://flags";
+        estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
         return;
       }
 
       try {
+        // Activar WakeLock para que la pantalla nunca se apague en el turno
+        if ('wakeLock' in navigator) {
+          await navigator.wakeLock.request('screen');
+        }
+
+        // Arrancar el audio silencioso en volumen medio (0.5)
+        ignorarCambioVolumen = true;
+        audioTruco.volume = 0.5;
+        await audioTruco.play();
+        setTimeout(() => { ignorarCambioVolumen = false; }, 200);
+
+        // Iniciar detector y cámara trasera
         detector = window.TextDetector.create 
           ? await TextDetector.create() 
           : new TextDetector();
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1920 }, // Mayor resolución para letras chicas
-            height: { ideal: 1080 }
-          }
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
         });
 
         video.srcObject = stream;
-        trackCamara = stream.getVideoTracks()[0];
+        trackCamara = stream.getVideoTracks();
 
-        // Aplicar Zoom 2x y enfoque continuo si el lente lo soporta
-        const caps = trackCamara.getCapabilities();
-        const ajustes = { advanced: [] };
-
-        if (caps.zoom) {
-          const nivelZoom = Math.min(2.2, caps.zoom.max); // 2.2x para leer sin acercarse
-          ajustes.advanced.push({ zoom: nivelZoom });
-        }
-        if (caps.focusMode && caps.focusMode.includes('continuous')) {
-          ajustes.advanced.push({ focusMode: 'continuous' });
-        }
-
-        if (ajustes.advanced.length > 0) {
-          await trackCamara.applyConstraints(ajustes);
-        }
-
-        video.onloadedmetadata = () => {
-          activarModoEscaneo(true);
-        };
+        btnIniciar.style.display = 'none'; // Ocultar botón, ya se usa solo el de volumen
+        estado.innerText = "LISTO: Presiona VOLUMEN + o - para escanear";
       } catch (err) {
-        estado.innerText = "Error de cámara: " + err.message;
+        estado.innerText = "Error al iniciar: " + err.message;
       }
-    }
+    });
 
-    function activarModoEscaneo(activar) {
+    // 3. CAPTURA DEL BOTÓN FÍSICO DE VOLUMEN (Funciona con cualquier guante)
+    audioTruco.addEventListener('volumechange', () => {
+      if (ignorarCambioVolumen) return;
+
+      // Resetear volumen a 0.5 para permitir infinitas pulsaciones futuras
+      ignorarCambioVolumen = true;
+      audioTruco.volume = 0.5;
+      setTimeout(() => { ignorarCambioVolumen = false; }, 150);
+
+      // Alternar escaneo (si estaba apagado lo enciende; si estaba buscando, lo detiene)
+      activarEscaneo(!escaneando);
+    });
+
+    // 4. ENCENDER / APAGAR ESCANEO + FLASH GUÍA
+    async function activarEscaneo(activar) {
       escaneando = activar;
-      estado.innerText = activar ? "Buscando #20000... (mantén distancia de 20-30 cm)" : "Pausado (golpea o toca para leer)";
+      marco.classList.toggle('escaneando', activar);
+      estado.innerText = activar ? "ESCANEANDO... Apunta al código" : "LISTO: Presiona VOLUMEN para escanear";
+
+      // Encender/apagar flash LED como luz de puntero
+      if (trackCamara && trackCamara.getCapabilities().torch) {
+        try {
+          await trackCamara.applyConstraints({ advanced: [{ torch: activar }] });
+        } catch (e) {}
+      }
+
       if (activar) bucleOCR();
     }
 
+    // 5. BUCLE DE LECTURA SOBRE RECORTE (640x240)
     async function bucleOCR() {
       if (!escaneando) return;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         const vw = video.videoWidth;
         const vh = video.videoHeight;
-
-        // Recorte fino exacto del recuadro verde (top: 43%, left: 8%, width: 84%, height: 14%)
         canvas.width = 640;
-        canvas.height = 140;
+        canvas.height = 240;
 
-        ctx.drawImage(
-          video,
-          vw * 0.08, vh * 0.43, vw * 0.84, vh * 0.14,
-          0, 0, canvas.width, canvas.height
-        );
+        ctx.filter = 'grayscale(1) contrast(1.4)';
+        ctx.drawImage(video, vw * 0.10, vh * 0.35, vw * 0.80, vh * 0.30, 0, 0, canvas.width, canvas.height);
 
         try {
           const bloques = await detector.detect(canvas);
 
           for (const bloque of bloques) {
-            // Limpiar espacios y errores típicos de OCR (ej. letra 'O' por cero '0' tras el #)
-            let limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
-            
+            const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
+
             if (FILTRO_REGEX.test(limpio)) {
+              // ¡LECTURA EXITOSA!
               resultado.innerText = limpio;
-              if (navigator.vibrate) navigator.vibrate(100);
-              activarModoEscaneo(false);
+              if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Doble vibración
+              
+              // Apagar escaneo y flash inmediatamente
+              await activarEscaneo(false);
+
+              // Enviar por Wi-Fi al sistema de bodega
+           //   enviarPorWifi(limpio);
               return;
             }
           }
-        } catch (e) {
-          estado.innerText = "Error OCR: " + e.message;
-        }
+        } catch (e) {}
       }
 
       setTimeout(bucleOCR, 300);
     }
 
-    // Botón principal
-    btn.addEventListener('click', () => {
-      if (!trackCamara) iniciarSistema();
-      else activarModoEscaneo(!escaneando);
-    });
-
-    // Botón manual de linterna (apagada por defecto)
-    btnLuz.addEventListener('click', async () => {
-      if (!trackCamara) return;
-      const caps = trackCamara.getCapabilities();
-      if (!caps.torch) {
-        estado.innerText = "Este equipo no permite controlar la luz desde el navegador";
-        return;
+    // 6. ENVÍO POR WI-FI LOCAL
+    async function enviarPorWifi(codigo) {
+      estado.innerText = "Enviando por Wi-Fi...";
+      try {
+        const resp = await fetch(URL_SERVIDOR_WIFI, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo: codigo, fecha: new Date().toISOString() })
+        });
+        estado.innerText = resp.ok 
+          ? "ENVIADO OK. Presiona VOLUMEN para siguiente" 
+          : "Error servidor (" + resp.status + ")";
+      } catch (err) {
+        estado.innerText = "Sin red Wi-Fi al enviar (dato guardado en pantalla)";
       }
-      luzActiva = !luzActiva;
-      await trackCamara.applyConstraints({ advanced: [{ torch: luzActiva }] });
-      btnLuz.innerText = luzActiva ? "Luz: ON" : "Luz: OFF";
-      btnLuz.classList.toggle('activa', luzActiva);
-    });
-
-    // Activación por golpe seco
-    window.addEventListener('devicemotion', (e) => {
-      const acc = e.accelerationIncludingGravity;
-      if (!acc) return;
-      const fuerza = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
-      if (fuerza > 22 && Date.now() - ultimoGolpe > 1500) {
-        ultimoGolpe = Date.now();
-        if (trackCamara && !escaneando) activarModoEscaneo(true);
-      }
-    });
+    }
   </script>
 </body>
 </html>

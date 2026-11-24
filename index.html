@@ -8,7 +8,6 @@
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
     .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
     video { width: 100%; display: block; }
-    /* Encuadre central */
     .encuadre {
       position: absolute; top: 35%; left: 10%; width: 80%; height: 30%;
       border: 3px solid #00ff88; border-radius: 8px; box-sizing: border-box;
@@ -36,16 +35,11 @@
   </div>
 
   <div class="panel">
-    <div id="estado">Toca el botón azul para iniciar turno</div>
+    <div id="estado">Toca el botón azul para iniciar cámara</div>
     <div id="resultado">---</div>
-    <button id="btn-iniciar">INICIAR TURNO (Activar Botón Volumen)</button>
+    <button id="btn-iniciar">INICIAR TURNO</button>
     <canvas id="canvas"></canvas>
   </div>
-
-  <!-- Audio WAV silencioso embebido (44 bytes) para capturar botones físicos de volumen -->
-  <audio id="audio-truco" loop playsinline
-    src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA">
-  </audio>
 
   <script>
     const video = document.getElementById('video');
@@ -55,18 +49,16 @@
     const resultado = document.getElementById('resultado');
     const marco = document.getElementById('marco');
     const btnIniciar = document.getElementById('btn-iniciar');
-    const audioTruco = document.getElementById('audio-truco');
 
     let detector = null;
     let trackCamara = null;
     let escaneando = false;
-    let ignorarCambioVolumen = false;
 
     // 1. CONFIGURACIÓN DE TU BODEGA
-    const URL_SERVIDOR_WIFI = 'http://192.168.1'; // Cambia por tu IP local
-    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/; // Ajusta a tu formato de código
+    const URL_SERVIDOR_WIFI = 'http://192.168.1';
+    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
 
-    // 2. INICIAR SISTEMA (Requiere 1 toque inicial al abrir el turno)
+    // 2. INICIAR CÁMARA Y WAKELOCK
     btnIniciar.addEventListener('click', async () => {
       if (!('TextDetector' in window)) {
         estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
@@ -74,18 +66,10 @@
       }
 
       try {
-        // Activar WakeLock para que la pantalla nunca se apague en el turno
         if ('wakeLock' in navigator) {
           await navigator.wakeLock.request('screen');
         }
 
-        // Arrancar el audio silencioso en volumen medio (0.5)
-        ignorarCambioVolumen = true;
-        audioTruco.volume = 0.5;
-        await audioTruco.play();
-        setTimeout(() => { ignorarCambioVolumen = false; }, 200);
-
-        // Iniciar detector y cámara trasera
         detector = window.TextDetector.create 
           ? await TextDetector.create() 
           : new TextDetector();
@@ -97,24 +81,20 @@
         video.srcObject = stream;
         trackCamara = stream.getVideoTracks();
 
-        btnIniciar.style.display = 'none'; // Ocultar botón, ya se usa solo el de volumen
-        estado.innerText = "LISTO: Presiona VOLUMEN + o - para escanear";
+        btnIniciar.style.display = 'none';
+        estado.innerText = "LISTO: Presiona VOLUMEN para escanear";
       } catch (err) {
         estado.innerText = "Error al iniciar: " + err.message;
       }
     });
 
-    // 3. CAPTURA DEL BOTÓN FÍSICO DE VOLUMEN (Funciona con cualquier guante)
-    audioTruco.addEventListener('volumechange', () => {
-      if (ignorarCambioVolumen) return;
-
-      // Resetear volumen a 0.5 para permitir infinitas pulsaciones futuras
-      ignorarCambioVolumen = true;
-      audioTruco.volume = 0.5;
-      setTimeout(() => { ignorarCambioVolumen = false; }, 150);
-
-      // Alternar escaneo (si estaba apagado lo enciende; si estaba buscando, lo detiene)
-      activarEscaneo(!escaneando);
+    // 3. CAPTURA DEL BOTÓN REMAPEADO (Space o Enter desde Key Mapper)
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        if (!trackCamara) return;
+        activarEscaneo(!escaneando);
+      }
     });
 
     // 4. ENCENDER / APAGAR ESCANEO + FLASH GUÍA
@@ -123,7 +103,6 @@
       marco.classList.toggle('escaneando', activar);
       estado.innerText = activar ? "ESCANEANDO... Apunta al código" : "LISTO: Presiona VOLUMEN para escanear";
 
-      // Encender/apagar flash LED como luz de puntero
       if (trackCamara && trackCamara.getCapabilities().torch) {
         try {
           await trackCamara.applyConstraints({ advanced: [{ torch: activar }] });
@@ -153,15 +132,11 @@
             const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
 
             if (FILTRO_REGEX.test(limpio)) {
-              // ¡LECTURA EXITOSA!
               resultado.innerText = limpio;
-              if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Doble vibración
+              if (navigator.vibrate) navigator.vibrate();
               
-              // Apagar escaneo y flash inmediatamente
               await activarEscaneo(false);
-
-              // Enviar por Wi-Fi al sistema de bodega
-           //   enviarPorWifi(limpio);
+              enviarPorWifi(limpio);
               return;
             }
           }
@@ -184,7 +159,7 @@
           ? "ENVIADO OK. Presiona VOLUMEN para siguiente" 
           : "Error servidor (" + resp.status + ")";
       } catch (err) {
-        estado.innerText = "Sin red Wi-Fi al enviar (dato guardado en pantalla)";
+        estado.innerText = "Sin red Wi-Fi al enviar (dato en pantalla)";
       }
     }
   </script>

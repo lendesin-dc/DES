@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escáner Bodega OCR + Botón Volumen</title>
+  <title>Escáner OCR - Feedback Pantalla</title>
   <style>
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
     .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
@@ -16,10 +16,21 @@
     .encuadre.escaneando { border-color: #ffaa00; }
     .panel { padding: 15px; }
     #estado { color: #ccc; font-size: 1rem; margin-bottom: 10px; }
+    
+    /* Resultado válido (pasa el filtro) */
     #resultado {
-      font-size: 1.6rem; font-weight: bold; color: #00ff88;
-      background: #222; padding: 14px; border-radius: 8px; min-height: 36px;
+      font-size: 1.8rem; font-weight: bold; color: #00ff88;
+      background: #1b2e24; border: 1px solid #00ff88;
+      padding: 14px; border-radius: 8px; min-height: 36px; margin-bottom: 10px;
     }
+
+    /* Feedback en vivo (todo lo que ve el OCR antes del filtro) */
+    #lectura-bruta {
+      font-size: 0.95rem; color: #ffaa00;
+      background: #222; padding: 10px; border-radius: 6px;
+      min-height: 24px; word-break: break-word;
+    }
+
     #btn-iniciar {
       width: 100%; max-width: 450px; padding: 20px; font-size: 1.2rem; font-weight: bold;
       margin-top: 12px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
@@ -37,6 +48,7 @@
   <div class="panel">
     <div id="estado">Toca el botón azul para iniciar cámara</div>
     <div id="resultado">---</div>
+    <div id="lectura-bruta">En bruto: (esperando escaneo)</div>
     <button id="btn-iniciar">INICIAR TURNO</button>
     <canvas id="canvas"></canvas>
   </div>
@@ -47,6 +59,7 @@
     const ctx = canvas.getContext('2d');
     const estado = document.getElementById('estado');
     const resultado = document.getElementById('resultado');
+    const lecturaBruta = document.getElementById('lectura-bruta');
     const marco = document.getElementById('marco');
     const btnIniciar = document.getElementById('btn-iniciar');
 
@@ -54,11 +67,10 @@
     let trackCamara = null;
     let escaneando = false;
 
-    // 1. CONFIGURACIÓN DE TU BODEGA
-    const URL_SERVIDOR_WIFI = 'http://192.168.1';
+    // FILTRO: Ajusta esta expresión regular al formato que buscas
     const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
 
-    // 2. INICIAR CÁMARA Y WAKELOCK
+    // 1. INICIAR CÁMARA Y WAKELOCK
     btnIniciar.addEventListener('click', async () => {
       if (!('TextDetector' in window)) {
         estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
@@ -82,13 +94,13 @@
         trackCamara = stream.getVideoTracks();
 
         btnIniciar.style.display = 'none';
-        estado.innerText = "LISTO: Presiona VOLUMEN para escanear";
+        estado.innerText = "LISTO: Presiona VOLUMEN ABAJO para escanear";
       } catch (err) {
         estado.innerText = "Error al iniciar: " + err.message;
       }
     });
 
-    // 3. CAPTURA DEL BOTÓN REMAPEADO (Space o Enter desde Key Mapper)
+    // 2. CAPTURA DEL BOTÓN REMAPEADO (Space desde Key Mapper)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.key === 'Enter') {
         e.preventDefault();
@@ -97,11 +109,15 @@
       }
     });
 
-    // 4. ENCENDER / APAGAR ESCANEO + FLASH GUÍA
+    // 3. ENCENDER / APAGAR ESCANEO + FLASH GUÍA
     async function activarEscaneo(activar) {
       escaneando = activar;
       marco.classList.toggle('escaneando', activar);
-      estado.innerText = activar ? "ESCANEANDO... Apunta al código" : "LISTO: Presiona VOLUMEN para escanear";
+      estado.innerText = activar ? "ESCANEANDO... Apunta al texto" : "LISTO: Presiona VOLUMEN ABAJO para escanear";
+
+      if (activar) {
+        lecturaBruta.innerText = "En bruto: buscando...";
+      }
 
       if (trackCamara && trackCamara.getCapabilities().torch) {
         try {
@@ -112,7 +128,7 @@
       if (activar) bucleOCR();
     }
 
-    // 5. BUCLE DE LECTURA SOBRE RECORTE (640x240)
+    // 4. BUCLE DE LECTURA SOBRE RECORTE (640x240)
     async function bucleOCR() {
       if (!escaneando) return;
 
@@ -128,39 +144,29 @@
         try {
           const bloques = await detector.detect(canvas);
 
-          for (const bloque of bloques) {
-            const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
+          if (bloques.length > 0) {
+            // Mostrar en pantalla TODO lo que vio el OCR en este frame
+            const todoElTexto = bloques.map(b => b.rawValue.trim()).join(' | ');
+            lecturaBruta.innerText = "En bruto: " + todoElTexto;
 
-            if (FILTRO_REGEX.test(limpio)) {
-              resultado.innerText = limpio;
-              if (navigator.vibrate) navigator.vibrate();
-              
-              await activarEscaneo(false);
-              enviarPorWifi(limpio);
-              return;
+            // Revisar si alguno cumple con tu filtro
+            for (const bloque of bloques) {
+              const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
+
+              if (FILTRO_REGEX.test(limpio)) {
+                resultado.innerText = limpio;
+                if (navigator.vibrate) navigator.vibrate();
+                
+                await activarEscaneo(false);
+                estado.innerText = "¡CAPTURADO! Presiona VOLUMEN ABAJO para el siguiente";
+                return;
+              }
             }
           }
         } catch (e) {}
       }
 
       setTimeout(bucleOCR, 300);
-    }
-
-    // 6. ENVÍO POR WI-FI LOCAL
-    async function enviarPorWifi(codigo) {
-      estado.innerText = "Enviando por Wi-Fi...";
-      try {
-        const resp = await fetch(URL_SERVIDOR_WIFI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigo: codigo, fecha: new Date().toISOString() })
-        });
-        estado.innerText = resp.ok 
-          ? "ENVIADO OK. Presiona VOLUMEN para siguiente" 
-          : "Error servidor (" + resp.status + ")";
-      } catch (err) {
-        estado.innerText = "Sin red Wi-Fi al enviar (dato en pantalla)";
-      }
     }
   </script>
 </body>

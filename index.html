@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escáner OCR - Feedback Pantalla</title>
+  <title>Escáner OCR - Diagnóstico Tecla</title>
   <style>
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
     .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
@@ -17,18 +17,21 @@
     .panel { padding: 15px; }
     #estado { color: #ccc; font-size: 1rem; margin-bottom: 10px; }
     
-    /* Resultado válido (pasa el filtro) */
     #resultado {
       font-size: 1.8rem; font-weight: bold; color: #00ff88;
       background: #1b2e24; border: 1px solid #00ff88;
       padding: 14px; border-radius: 8px; min-height: 36px; margin-bottom: 10px;
     }
 
-    /* Feedback en vivo (todo lo que ve el OCR antes del filtro) */
     #lectura-bruta {
       font-size: 0.95rem; color: #ffaa00;
       background: #222; padding: 10px; border-radius: 6px;
-      min-height: 24px; word-break: break-word;
+      min-height: 24px; word-break: break-word; margin-bottom: 10px;
+    }
+
+    #debug-tecla {
+      font-size: 0.85rem; color: #88ccff;
+      background: #1a222d; padding: 8px; border-radius: 6px;
     }
 
     #btn-iniciar {
@@ -49,6 +52,7 @@
     <div id="estado">Toca el botón azul para iniciar cámara</div>
     <div id="resultado">---</div>
     <div id="lectura-bruta">En bruto: (esperando escaneo)</div>
+    <div id="debug-tecla">Última tecla recibida: NINGUNA</div>
     <button id="btn-iniciar">INICIAR TURNO</button>
     <canvas id="canvas"></canvas>
   </div>
@@ -60,6 +64,7 @@
     const estado = document.getElementById('estado');
     const resultado = document.getElementById('resultado');
     const lecturaBruta = document.getElementById('lectura-bruta');
+    const debugTecla = document.getElementById('debug-tecla');
     const marco = document.getElementById('marco');
     const btnIniciar = document.getElementById('btn-iniciar');
 
@@ -67,10 +72,8 @@
     let trackCamara = null;
     let escaneando = false;
 
-    // FILTRO: Ajusta esta expresión regular al formato que buscas
     const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
 
-    // 1. INICIAR CÁMARA Y WAKELOCK
     btnIniciar.addEventListener('click', async () => {
       if (!('TextDetector' in window)) {
         estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
@@ -100,16 +103,27 @@
       }
     });
 
-    // 2. CAPTURA DEL BOTÓN REMAPEADO (Space desde Key Mapper)
+    // CAPTURA Y DIAGNÓSTICO DE CUALQUIER TECLA QUE LLEGUE A CHROME
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.key === 'Enter') {
+      debugTecla.innerText = `Última tecla recibida: key="${e.key}" | code="${e.code}" | keyCode=${e.keyCode}`;
+
+      // Acepta Espacio, Enter, Play/Pausa multimedia o tecla 0/Volumen
+      if (
+        e.code === 'Space' || 
+        e.key === ' ' || 
+        e.key === 'Enter' || 
+        e.key === 'MediaPlayPause' ||
+        e.keyCode === 32 || 
+        e.keyCode === 13 || 
+        e.keyCode === 85 || 
+        e.keyCode === 179
+      ) {
         e.preventDefault();
         if (!trackCamara) return;
         activarEscaneo(!escaneando);
       }
     });
 
-    // 3. ENCENDER / APAGAR ESCANEO + FLASH GUÍA
     async function activarEscaneo(activar) {
       escaneando = activar;
       marco.classList.toggle('escaneando', activar);
@@ -128,7 +142,6 @@
       if (activar) bucleOCR();
     }
 
-    // 4. BUCLE DE LECTURA SOBRE RECORTE (640x240)
     async function bucleOCR() {
       if (!escaneando) return;
 
@@ -145,11 +158,9 @@
           const bloques = await detector.detect(canvas);
 
           if (bloques.length > 0) {
-            // Mostrar en pantalla TODO lo que vio el OCR en este frame
             const todoElTexto = bloques.map(b => b.rawValue.trim()).join(' | ');
             lecturaBruta.innerText = "En bruto: " + todoElTexto;
 
-            // Revisar si alguno cumple con tu filtro
             for (const bloque of bloques) {
               const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
 

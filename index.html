@@ -3,183 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escáner OCR - Bodega</title>
+  <title>Prueba Botón Volumen -> Tap Pantalla</title>
   <style>
-    body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
-    .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
-    video { width: 100%; display: block; }
-    .encuadre {
-      position: absolute; top: 35%; left: 10%; width: 80%; height: 30%;
-      border: 3px solid #00ff88; border-radius: 8px; box-sizing: border-box;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); pointer-events: none;
+    body {
+      margin: 0; font-family: sans-serif; background: #111; color: #fff;
+      display: flex; flex-direction: column; height: 100vh; text-align: center;
     }
-    .encuadre.escaneando { border-color: #ffaa00; }
-    .panel { padding: 15px; }
-    #estado { color: #ccc; font-size: 1rem; margin-bottom: 10px; }
+    .info {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; padding: 20px;
+    }
+    #contador { font-size: 4rem; font-weight: bold; color: #00ff88; margin: 10px 0; }
+    #estado { font-size: 1.3rem; color: #ccc; }
     
-    #resultado {
-      font-size: 1.8rem; font-weight: bold; color: #00ff88;
-      background: #1b2e24; border: 1px solid #00ff88;
-      padding: 14px; border-radius: 8px; min-height: 36px; margin-bottom: 10px;
+    /* Botón gigante que ocupa toda la mitad inferior */
+    #btn-disparo {
+      height: 50vh; width: 100%; border: none;
+      background: #0066cc; color: #fff; font-size: 1.8rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation;
     }
-
-    #lectura-bruta {
-      font-size: 0.95rem; color: #ffaa00;
-      background: #222; padding: 10px; border-radius: 6px;
-      min-height: 24px; word-break: break-word; margin-bottom: 10px;
-    }
-
-    #btn-iniciar {
-      width: 100%; max-width: 450px; padding: 20px; font-size: 1.2rem; font-weight: bold;
-      margin-top: 12px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
-    }
-
-    /* Campo invisible que atrapa el botón de volumen sin abrir teclado en pantalla */
-    #trampa-tecla {
-      position: fixed; top: -100px; left: -100px; opacity: 0; width: 1px; height: 1px;
-    }
-    #canvas { display: none; }
+    #btn-disparo.activo { background: #e67e22; }
   </style>
 </head>
 <body>
 
-  <div class="visor">
-    <video id="video" autoplay playsinline></video>
-    <div id="marco" class="encuadre"></div>
+  <div class="info">
+    <div id="estado">EN ESPERA</div>
+    <div id="contador">0</div>
+    <div>Pulsaciones recibidas</div>
   </div>
 
-  <div class="panel">
-    <div id="estado">Toca el botón azul para iniciar cámara</div>
-    <div id="resultado">---</div>
-    <div id="lectura-bruta">En bruto: (esperando escaneo)</div>
-    <button id="btn-iniciar">INICIAR TURNO</button>
-    
-    <!-- Input con inputmode="none" para que Android no abra teclado táctil ni emojis -->
-    <input id="trampa-tecla" type="text" inputmode="none" autocomplete="off">
-    <canvas id="canvas"></canvas>
-  </div>
+  <button id="btn-disparo">DISPARADOR</button>
 
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const btn = document.getElementById('btn-disparo');
+    const contador = document.getElementById('contador');
     const estado = document.getElementById('estado');
-    const resultado = document.getElementById('resultado');
-    const lecturaBruta = document.getElementById('lectura-bruta');
-    const marco = document.getElementById('marco');
-    const btnIniciar = document.getElementById('btn-iniciar');
-    const trampaTecla = document.getElementById('trampa-tecla');
+    let cuenta = 0;
+    let encendido = false;
 
-    let detector = null;
-    let trackCamara = null;
-    let escaneando = false;
+    btn.addEventListener('click', () => {
+      cuenta++;
+      encendido = !encendido;
 
-    const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
+      contador.innerText = cuenta;
+      estado.innerText = encendido ? "ACTIVADO (Naranja)" : "EN ESPERA (Azul)";
+      btn.classList.toggle('activo', encendido);
 
-    // Mantener el foco siempre dentro de la trampa de tecla
-    function asegurarFoco() {
-      if (trackCamara && document.activeElement !== trampaTecla) {
-        trampaTecla.focus();
-      }
-    }
-    trampaTecla.addEventListener('blur', () => setTimeout(asegurarFoco, 50));
-    document.addEventListener('click', asegurarFoco);
-
-    // INICIAR CÁMARA Y WAKELOCK
-    btnIniciar.addEventListener('click', async () => {
-      if (!('TextDetector' in window)) {
-        estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
-        return;
-      }
-
-      try {
-        if ('wakeLock' in navigator) {
-          await navigator.wakeLock.request('screen');
-        }
-
-        detector = window.TextDetector.create 
-          ? await TextDetector.create() 
-          : new TextDetector();
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-
-        video.srcObject = stream;
-        trackCamara = stream.getVideoTracks();
-
-        btnIniciar.style.display = 'none';
-        estado.innerText = "LISTO: Presiona VOLUMEN ABAJO para escanear";
-        
-        // Enfocar la trampa inmediatamente
-        trampaTecla.focus();
-      } catch (err) {
-        estado.innerText = "Error al iniciar: " + err.message;
-      }
+      if (navigator.vibrate) navigator.vibrate(80);
     });
-
-    // ATRAPAR EL ESPACIO ENVIADO POR KEY MAPPER AL INPUT INVISIBLE
-    trampaTecla.addEventListener('input', () => {
-      trampaTecla.value = ''; // Limpiar el espacio recibido
-      if (!trackCamara) return;
-      activarEscaneo(!escaneando);
-    });
-
-    async function activarEscaneo(activar) {
-      escaneando = activar;
-      marco.classList.toggle('escaneando', activar);
-      estado.innerText = activar ? "ESCANEANDO... Apunta al texto" : "LISTO: Presiona VOLUMEN ABAJO para escanear";
-
-      if (activar) {
-        lecturaBruta.innerText = "En bruto: buscando...";
-      }
-
-      if (trackCamara && trackCamara.getCapabilities().torch) {
-        try {
-          await trackCamara.applyConstraints({ advanced: [{ torch: activar }] });
-        } catch (e) {}
-      }
-
-      if (activar) bucleOCR();
-    }
-
-    async function bucleOCR() {
-      if (!escaneando) return;
-
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-        canvas.width = 640;
-        canvas.height = 240;
-
-      //  ctx.filter = 'grayscale(1) contrast(1.4)';
-        ctx.drawImage(video, vw * 0.10, vh * 0.35, vw * 0.80, vh * 0.30, 0, 0, canvas.width, canvas.height);
-
-        try {
-          const bloques = await detector.detect(canvas);
-
-          if (bloques.length > 0) {
-            const todoElTexto = bloques.map(b => b.rawValue.trim()).join(' | ');
-            lecturaBruta.innerText = "En bruto: " + todoElTexto;
-
-            for (const bloque of bloques) {
-              const limpio = bloque.rawValue.trim().toUpperCase().replace(/\s+/g, '');
-
-              if (FILTRO_REGEX.test(limpio)) {
-                resultado.innerText = limpio;
-                if (navigator.vibrate) navigator.vibrate();
-                
-                await activarEscaneo(false);
-                estado.innerText = "¡CAPTURADO! Presiona VOLUMEN ABAJO para el siguiente";
-                return;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      setTimeout(bucleOCR, 300);
-    }
   </script>
 </body>
 </html>

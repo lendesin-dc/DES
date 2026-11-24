@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Escáner OCR - Diagnóstico Tecla</title>
+  <title>Escáner OCR - Bodega</title>
   <style>
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; text-align: center; }
     .visor { position: relative; width: 100%; max-width: 640px; margin: auto; background: #000; }
@@ -29,14 +29,14 @@
       min-height: 24px; word-break: break-word; margin-bottom: 10px;
     }
 
-    #debug-tecla {
-      font-size: 0.85rem; color: #88ccff;
-      background: #1a222d; padding: 8px; border-radius: 6px;
-    }
-
     #btn-iniciar {
       width: 100%; max-width: 450px; padding: 20px; font-size: 1.2rem; font-weight: bold;
       margin-top: 12px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
+    }
+
+    /* Campo invisible que atrapa el botón de volumen sin abrir teclado en pantalla */
+    #trampa-tecla {
+      position: fixed; top: -100px; left: -100px; opacity: 0; width: 1px; height: 1px;
     }
     #canvas { display: none; }
   </style>
@@ -52,8 +52,10 @@
     <div id="estado">Toca el botón azul para iniciar cámara</div>
     <div id="resultado">---</div>
     <div id="lectura-bruta">En bruto: (esperando escaneo)</div>
-    <div id="debug-tecla">Última tecla recibida: NINGUNA</div>
     <button id="btn-iniciar">INICIAR TURNO</button>
+    
+    <!-- Input con inputmode="none" para que Android no abra teclado táctil ni emojis -->
+    <input id="trampa-tecla" type="text" inputmode="none" autocomplete="off">
     <canvas id="canvas"></canvas>
   </div>
 
@@ -64,9 +66,9 @@
     const estado = document.getElementById('estado');
     const resultado = document.getElementById('resultado');
     const lecturaBruta = document.getElementById('lectura-bruta');
-    const debugTecla = document.getElementById('debug-tecla');
     const marco = document.getElementById('marco');
     const btnIniciar = document.getElementById('btn-iniciar');
+    const trampaTecla = document.getElementById('trampa-tecla');
 
     let detector = null;
     let trackCamara = null;
@@ -74,6 +76,16 @@
 
     const FILTRO_REGEX = /^[A-Z0-9-]{5,15}$/;
 
+    // Mantener el foco siempre dentro de la trampa de tecla
+    function asegurarFoco() {
+      if (trackCamara && document.activeElement !== trampaTecla) {
+        trampaTecla.focus();
+      }
+    }
+    trampaTecla.addEventListener('blur', () => setTimeout(asegurarFoco, 50));
+    document.addEventListener('click', asegurarFoco);
+
+    // INICIAR CÁMARA Y WAKELOCK
     btnIniciar.addEventListener('click', async () => {
       if (!('TextDetector' in window)) {
         estado.innerText = "ERROR: Habilita 'Experimental Web Platform features' en chrome://flags";
@@ -98,30 +110,19 @@
 
         btnIniciar.style.display = 'none';
         estado.innerText = "LISTO: Presiona VOLUMEN ABAJO para escanear";
+        
+        // Enfocar la trampa inmediatamente
+        trampaTecla.focus();
       } catch (err) {
         estado.innerText = "Error al iniciar: " + err.message;
       }
     });
 
-    // CAPTURA Y DIAGNÓSTICO DE CUALQUIER TECLA QUE LLEGUE A CHROME
-    window.addEventListener('keydown', (e) => {
-      debugTecla.innerText = `Última tecla recibida: key="${e.key}" | code="${e.code}" | keyCode=${e.keyCode}`;
-
-      // Acepta Espacio, Enter, Play/Pausa multimedia o tecla 0/Volumen
-      if (
-        e.code === 'Space' || 
-        e.key === ' ' || 
-        e.key === 'Enter' || 
-        e.key === 'MediaPlayPause' ||
-        e.keyCode === 32 || 
-        e.keyCode === 13 || 
-        e.keyCode === 85 || 
-        e.keyCode === 179
-      ) {
-        e.preventDefault();
-        if (!trackCamara) return;
-        activarEscaneo(!escaneando);
-      }
+    // ATRAPAR EL ESPACIO ENVIADO POR KEY MAPPER AL INPUT INVISIBLE
+    trampaTecla.addEventListener('input', () => {
+      trampaTecla.value = ''; // Limpiar el espacio recibido
+      if (!trackCamara) return;
+      activarEscaneo(!escaneando);
     });
 
     async function activarEscaneo(activar) {
